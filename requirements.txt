@@ -1,0 +1,6 @@
+backoff
+python-dotenv
+flask==1.1.4
+python-json-logger==2.0.2
+requests==2.26.0
+redis
