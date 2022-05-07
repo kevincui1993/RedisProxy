@@ -2,6 +2,7 @@ from unittest.mock import patch, MagicMock
 
 import redis
 
+import config
 from constants import RedisKeyNotFound
 from redis_proxy.proxy import Proxy
 
@@ -82,3 +83,13 @@ def test_rety_on_redis_exist(mock_redis):
         assert AssertionError()
     except redis.ConnectionError:
         assert mock_redis_conn.get.call_count == 3
+
+
+@patch("redis.Redis")
+def test_concurrency(mock_redis):
+    proxy = Proxy()
+    proxy.concurrency_count = config.MAX_CONCURRENCY + 1
+    assert proxy.is_too_many_requests() is True
+
+    proxy.concurrency_count = config.MAX_CONCURRENCY - 1
+    assert proxy.is_too_many_requests() is False

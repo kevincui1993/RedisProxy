@@ -5,7 +5,7 @@ import backoff
 import redis
 
 import config
-from constants import RedisKeyNotFound
+from constants import RedisKeyNotFound, TooManyRequests
 from redis_proxy.cache import Cache
 from redis_proxy.redis_fence import RedisFence
 
@@ -20,20 +20,28 @@ class Proxy:
         for _ in range(config.REDIS_CONNECTION_POOL_SIZE):
             self.redis_client_pool.append(RedisFence(self.redis_host, self.redis_port))
         self.cache = Cache(config.CACHE_EXPIRY_SECONDS, config.CACHE_CAPACITY)
+        self.concurrency_count = 0
 
     def get_record(self, key):
-        found, value = self.cache.get(key)
-        redis_client = self.get_client_from_pool()
+        if self.is_too_many_requests():
+            raise TooManyRequests
 
-        if found:
-            return value
-        elif self.redis_exists(redis_client, key):
-            value = self.redis_get(redis_client, key)
-            self.set_record(key, value)
-            return value
-        else:
-            logger.warning(f"'{key}' does not exist")
-            raise RedisKeyNotFound
+        try:
+            self.concurrency_count += 1
+            found, value = self.cache.get(key)
+            redis_client = self.get_client_from_pool()
+
+            if found:
+                return value
+            elif self.redis_exists(redis_client, key):
+                value = self.redis_get(redis_client, key)
+                self.set_record(key, value)
+                return value
+            else:
+                logger.warning(f"'{key}' does not exist")
+                raise RedisKeyNotFound
+        finally:
+            self.concurrency_count -= 1
 
     def set_record(self, key, value):
         self.cache.set(key, value)
@@ -71,3 +79,6 @@ class Proxy:
     )
     def redis_get(self, redis_client, key):
         return redis_client.get_client().get(key)
+
+    def is_too_many_requests(self):
+        return self.concurrency_count > config.MAX_CONCURRENCY
