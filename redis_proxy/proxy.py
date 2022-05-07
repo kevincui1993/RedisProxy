@@ -1,6 +1,9 @@
 import logging
 from random import randint
 
+import backoff
+import redis
+
 import config
 from constants import RedisKeyNotFound
 from redis_proxy.cache import Cache
@@ -24,8 +27,8 @@ class Proxy:
 
         if found:
             return value
-        elif redis_client.exists(key):
-            value = redis_client.get(key)
+        elif self.redis_exists(redis_client, key):
+            value = self.redis_get(redis_client, key)
             self.set_record(key, value)
             return value
         else:
@@ -41,4 +44,30 @@ class Proxy:
             self.redis_client_pool.append(RedisFence(self.redis_host, self.redis_port))
 
         index = randint(0, len(self.redis_client_pool) - 1)
-        return self.redis_client_pool[index].get_client()
+        return self.redis_client_pool[index]
+
+    @backoff.on_exception(
+        backoff.expo,
+        (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.TimeoutError,
+            redis.exceptions.RedisError,
+        ),
+        max_tries=3,
+        max_time=3,
+    )
+    def redis_exists(self, redis_client, key):
+        return redis_client.get_client().exists(key)
+
+    @backoff.on_exception(
+        backoff.expo,
+        (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.TimeoutError,
+            redis.exceptions.RedisError,
+        ),
+        max_tries=3,
+        max_time=3,
+    )
+    def redis_get(self, redis_client, key):
+        return redis_client.get_client().get(key)

@@ -8,4 +8,9 @@ class RedisFence:
         self.client = redis.Redis(host=self.host, port=self.port)
 
     def get_client(self):
-        return self.client
+        try:
+            self.client.ping()
+        except Exception:
+            self.client = redis.Redis(host=self.host, port=self.port)
+        finally:
+            return self.client

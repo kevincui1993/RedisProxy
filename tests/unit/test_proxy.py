@@ -1,6 +1,7 @@
 from unittest.mock import patch, MagicMock
 
-from config import REDIS_CONNECTION_POOL_SIZE
+import redis
+
 from constants import RedisKeyNotFound
 from redis_proxy.proxy import Proxy
 
@@ -49,3 +50,35 @@ def test_set_record(mock_redis):
 
     assert res == "some value"
     assert mock_redis_conn.exists.call_count == 0
+
+
+@patch("redis.Redis")
+def test_rety_on_redis_get(mock_redis):
+    mock_redis_conn = MagicMock()
+    mock_redis_conn.get.side_effect = redis.ConnectionError(
+        "Connection to Redis failed"
+    )
+    mock_redis.return_value = mock_redis_conn
+
+    try:
+        proxy = Proxy()
+        proxy.redis_get(proxy.get_client_from_pool(), "key")
+        assert AssertionError()
+    except redis.ConnectionError:
+        assert mock_redis_conn.get.call_count == 3
+
+
+@patch("redis.Redis")
+def test_rety_on_redis_exist(mock_redis):
+    mock_redis_conn = MagicMock()
+    mock_redis_conn.exist.side_effect = redis.ConnectionError(
+        "Connection to Redis failed"
+    )
+    mock_redis.return_value = mock_redis_conn
+
+    try:
+        proxy = Proxy()
+        proxy.redis_exists(proxy.get_client_from_pool(), "key")
+        assert AssertionError()
+    except redis.ConnectionError:
+        assert mock_redis_conn.get.call_count == 3
