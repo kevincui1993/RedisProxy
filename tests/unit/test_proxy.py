@@ -1,5 +1,6 @@
 from unittest.mock import patch, MagicMock
 
+from config import REDIS_CONNECTION_POOL_SIZE
 from constants import RedisKeyNotFound
 from redis_proxy.proxy import Proxy
 
