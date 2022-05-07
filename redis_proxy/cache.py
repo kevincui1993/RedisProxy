@@ -1,8 +1,18 @@
 import logging
 from threading import BoundedSemaphore
 import time
+from heapq import heapify, heappush, heappop
 
 logger = logging.getLogger()
+
+
+class CacheRecord:
+    def __init__(self, value, timestamp):
+        self.value = value
+        self.timestamp = timestamp
+
+    def __lt__(self, other):
+        return self.timestamp < other.timestamp
 
 
 class Cache:
@@ -11,19 +21,19 @@ class Cache:
         self.sem = BoundedSemaphore(1)
         self.timeout = timeout
         self.cache_dict = {}
-        self.cache_list = []
+        self.cache_heap = []
+        heapify(self.cache_heap)
 
     def get(self, key):
         try:
             self.sem.acquire()
             if key in self.cache_dict:
-                value, timestamp = self.cache_dict.get(key)
-                if self.is_expired(timestamp):
-                    self.cache_list.remove(key)
+                cache_record = self.cache_dict.get(key)
+                if self.is_expired(cache_record.timestamp):
                     del self.cache_dict[key]
                     return False, "expired"
                 else:
-                    return True, self.cache_dict.get(key)
+                    return True, cache_record.value
             else:
                 return False, "not_found"
         finally:
@@ -32,15 +42,15 @@ class Cache:
     def set(self, key, value):
         try:
             self.sem.acquire()
-            while len(self.cache_list) >= self.capacity:
-                expired_key = self.cache_list.pop(0)
+            if len(self.cache_heap) >= self.capacity:
+                expired_key = heappop(self.cache_heap)
                 if expired_key in self.cache_dict:
                     del self.cache_dict[expired_key]
                 else:
                     logger.warning(f"'{expired_key}' does not exist in cache_dict")
 
-            self.cache_list.append(key)
-            self.cache_dict[key] = (value, int(time.time()))
+            heappush(self.cache_heap, key)
+            self.cache_dict[key] = CacheRecord(value, int(time.time()))
         finally:
             self.sem.release()
 

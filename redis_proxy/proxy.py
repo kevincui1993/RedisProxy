@@ -18,7 +18,7 @@ class Proxy:
     def get_record(self, key):
         found, value = self.cache.get(key)
         if found:
-            return value[0]
+            return value
         elif self.redis_client.exists(key):
             value = self.redis_client.get(key)
             self.set_record(key, value)

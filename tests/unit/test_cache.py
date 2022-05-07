@@ -17,7 +17,7 @@ def test_set_get(cache):
 
     assert cache.sem._value == 1
     assert found is True
-    assert detail[0] == "this is a test"
+    assert detail == "this is a test"
 
 
 def test_get_not_found(cache):
