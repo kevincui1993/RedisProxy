@@ -1,14 +1,14 @@
 from flask import Flask, request
-
+import config
 from constants import Status, RedisKeyNotFound
 from redis_proxy.proxy import Proxy
 
 app = Flask(__name__)
-proxy = None
+proxy = Proxy()
 
 
 @app.route("/get")
-def result():
+def get():
     response, status = "", Status.NOT_FOUND
     try:
         response = proxy.get_record(request.args.get("key"))
@@ -16,10 +16,12 @@ def result():
     except RedisKeyNotFound:
         response = "key_not_found"
         status = Status.INVALID
+    except Exception as e:
+        response = str(e)
+        status = Status.INVALID
     finally:
-        return response, status
+        return response, status.value[0]
 
 
 if __name__ == "__main__":
-    proxy = Proxy()
-    app.run(host="localhost", port=8000, debug=True)
+    app.run(host=config.HOST, port=config.PORT, debug=True)

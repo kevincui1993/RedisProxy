@@ -17,16 +17,15 @@ class Proxy:
 
     def get_record(self, key):
         found, value = self.cache.get(key)
-
         if found:
-            return value
+            return value[0]
         elif self.redis_client.exists(key):
             value = self.redis_client.get(key)
-            self.store_record(key, value)
+            self.set_record(key, value)
             return value
         else:
             logger.warning(f"'{key}' does not exist")
             raise RedisKeyNotFound
 
-    def store_record(self, key, value):
+    def set_record(self, key, value):
         self.cache.set(key, value)
