@@ -32,7 +32,7 @@ make test
 # How To Run System Tests
 
 ```
-make system_tests
+make system_test
 ```
 
 # Time Spent
