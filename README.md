@@ -23,19 +23,21 @@ make run
 ```
 
 
-# How To Run The Proxy Service Tests
+# How To Run Unit Tests and System Tests
+
+This requires valid backing redis server host and port specified in config.py
 
 ```
 make test
 ```
 
-# How To Run System Tests
+# How To Send HTTP Request to Proxy Service With Curl
 
-This requires valid backing redis server host and port specified in config.py
+Assuming the proxy service listens on localhost and port 8000
+```
+curl http://127.0.0.1:8000/get?key="test"
+```
 
-```
-make system_test
-```
 
 # Time Spent
 
