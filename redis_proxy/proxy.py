@@ -35,10 +35,12 @@ class Proxy:
             redis_client = self.get_client_from_pool()
 
             if found:
+                logger.info(f"Found record from cache: ({key}, {value}")
                 return value
             elif self.redis_exists(redis_client, key):
                 value = self.redis_get(redis_client, key)
                 self.set_record(key, value)
+                logger.info(f"Retrieved record from redis: ({key}, {value}")
                 return value
             else:
                 logger.warning(f"'{key}' does not exist")
