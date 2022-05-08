@@ -22,6 +22,19 @@ All the configuration is in config.py. Once you are happy with the config, you c
 make run
 ```
 
+
+# How To Run The Proxy Service Tests
+
+```
+make test
+```
+
+# How To Run System Tests
+
+```
+make system_tests
+```
+
 # Time Spent
 
 Create python flask framework - 1 hour.  
