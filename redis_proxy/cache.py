@@ -88,11 +88,14 @@ class Cache:
         try:
             self.sem.acquire()
             if key in self.cache_dict:
+                # if key already exists, update the value and move to front
                 node = self.cache_dict[key]
+                node.value = value
                 self.cache_list.move_front(node)
                 return
 
             if self.cache_list.capacity >= self.capacity:
+                # remove the least recent used cache entry
                 removed_cache_node = self.cache_list.remove_tail()
                 if removed_cache_node.key in self.cache_dict:
                     del self.cache_dict[removed_cache_node.key]

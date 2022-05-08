@@ -16,9 +16,12 @@ class Proxy:
     def __init__(self):
         self.redis_host = config.REDIS_HOST
         self.redis_port = config.REDIS_PORT
+
+        # create a pool of redis connections to reuse
         self.redis_client_pool = []
         for _ in range(config.REDIS_CONNECTION_POOL_SIZE):
             self.redis_client_pool.append(RedisFence(self.redis_host, self.redis_port))
+
         self.cache = Cache(config.CACHE_EXPIRY_SECONDS, config.CACHE_CAPACITY)
         self.concurrency_count = 0
 
