@@ -25,6 +25,8 @@ class DoubleLinkedList:
         self.root.prev = self.root
 
     def insert_front(self, node):
+        if node is None:
+            return None
         self.move_front(node)
         self.capacity += 1
         return node
@@ -50,8 +52,12 @@ class DoubleLinkedList:
         self.capacity -= 1
         return removed
 
-    @staticmethod
-    def pop(node):
+    def remove(self, node):
+        removed = self.pop(node)
+        self.capacity -= 1
+        return removed
+
+    def pop(self, node):
         node.next.prev = node.prev
         node.prev.next = node.next
         node.next = None
@@ -73,7 +79,7 @@ class Cache:
             if key in self.cache_dict:
                 cache_node = self.cache_dict.get(key)
                 if self.is_expired(cache_node.timestamp):
-                    self.cache_list.pop(cache_node)
+                    self.cache_list.remove(cache_node)
                     del self.cache_dict[key]
                     return False, "expired"
                 else:

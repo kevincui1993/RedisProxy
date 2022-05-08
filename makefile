@@ -13,8 +13,11 @@ run: venv
 clean:
 	rm -rf $(VENV)
 	find . -type f -name '*.pyc' -delete
+	kill `cat server.PID`
 
 test: venv
+	./$(VENV)/bin/python3 app.py & echo $$! > server.PID;
 	pytest
+	kill `cat server.PID`
 
 .PHONY: all venv run clean
