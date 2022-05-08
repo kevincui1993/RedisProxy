@@ -31,6 +31,8 @@ make test
 
 # How To Run System Tests
 
+This requires valid backing redis server host and port specified in config.py
+
 ```
 make system_test
 ```
