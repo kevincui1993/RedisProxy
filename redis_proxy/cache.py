@@ -1,18 +1,62 @@
 import logging
 from threading import BoundedSemaphore
 import time
-from heapq import heapify, heappush, heappop
 
 logger = logging.getLogger()
 
 
-class CacheRecord:
-    def __init__(self, value, timestamp):
+class CacheNode:
+    def __init__(self, key, value, timestamp):
+        self.key = key
         self.value = value
         self.timestamp = timestamp
+        self.next = None
+        self.prev = None
 
     def __lt__(self, other):
         return self.timestamp < other.timestamp
+
+
+class DoubleLinkedList:
+    def __init__(self):
+        self.root = CacheNode(None, None, None)
+        self.capacity = 0
+        self.root.next = self.root
+        self.root.prev = self.root
+
+    def insert_front(self, node):
+        self.move_front(node)
+        self.capacity += 1
+        return node
+
+    def move_front(self, node):
+        if node is None:
+            return None
+        elif node.prev is not None and node.next is not None:
+            self.pop(node)
+
+        node.prev = self.root
+        node.next = self.root.next
+
+        self.root.next.prev = node
+        self.root.next = node
+        return node
+
+    def remove_tail(self):
+        if self.capacity == 0:
+            return None
+
+        removed = self.pop(self.root.prev)
+        self.capacity -= 1
+        return removed
+
+    @staticmethod
+    def pop(node):
+        node.next.prev = node.prev
+        node.prev.next = node.next
+        node.next = None
+        node.prev = None
+        return node
 
 
 class Cache:
@@ -21,19 +65,20 @@ class Cache:
         self.sem = BoundedSemaphore(1)
         self.timeout = timeout
         self.cache_dict = {}
-        self.cache_heap = []
-        heapify(self.cache_heap)
+        self.cache_list = DoubleLinkedList()
 
     def get(self, key):
         try:
             self.sem.acquire()
             if key in self.cache_dict:
-                cache_record = self.cache_dict.get(key)
-                if self.is_expired(cache_record.timestamp):
+                cache_node = self.cache_dict.get(key)
+                if self.is_expired(cache_node.timestamp):
+                    self.cache_list.pop(cache_node)
                     del self.cache_dict[key]
                     return False, "expired"
                 else:
-                    return True, cache_record.value
+                    self.cache_list.move_front(cache_node)
+                    return True, cache_node.value
             else:
                 return False, "not_found"
         finally:
@@ -42,15 +87,23 @@ class Cache:
     def set(self, key, value):
         try:
             self.sem.acquire()
-            if len(self.cache_heap) >= self.capacity:
-                expired_key = heappop(self.cache_heap)
-                if expired_key in self.cache_dict:
-                    del self.cache_dict[expired_key]
-                else:
-                    logger.warning(f"'{expired_key}' does not exist in cache_dict")
+            if key in self.cache_dict:
+                node = self.cache_dict[key]
+                self.cache_list.move_front(node)
+                return
 
-            heappush(self.cache_heap, key)
-            self.cache_dict[key] = CacheRecord(value, int(time.time()))
+            if self.cache_list.capacity >= self.capacity:
+                removed_cache_node = self.cache_list.remove_tail()
+                if removed_cache_node.key in self.cache_dict:
+                    del self.cache_dict[removed_cache_node.key]
+                else:
+                    logger.warning(
+                        f"'{removed_cache_node.key}' does not exist in cache_dict"
+                    )
+
+            node = CacheNode(key, value, int(time.time()))
+            self.cache_list.insert_front(node)
+            self.cache_dict[key] = node
         finally:
             self.sem.release()
 
