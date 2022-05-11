@@ -9,7 +9,7 @@ from redis_proxy.redis_fence import RedisFence
 
 
 def disable_test_get():
-    redis_client = RedisFence("127.0.0.1", 6379).get_client()
+    redis_client = RedisFence(config.REDIS_HOST, config.REDIS_PORT).get_client()
     redis_client.delete("test_get")
 
     with app.test_client() as c:
@@ -27,7 +27,7 @@ def disable_test_get():
 def test_end_2_end():
     url = f"http://{config.HOST}:{config.PORT}/get"
     params = {"key": "test_get"}
-    redis_client = RedisFence("127.0.0.1", 6379).get_client()
+    redis_client = RedisFence(config.REDIS_HOST, config.REDIS_PORT).get_client()
     redis_client.delete("test_get")
     sleep(0.5)
 
