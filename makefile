@@ -1,9 +1,9 @@
 VENV := venv
 all: venv
 
-$(VENV)/bin/activate: requirements.dev.lock
+$(VENV)/bin/activate: requirements.dev.txt
 	python3 -m venv $(VENV)
-	./$(VENV)/bin/pip install -r requirements.dev.lock
+	./$(VENV)/bin/pip install -r requirements.dev.txt
 
 venv: $(VENV)/bin/activate
 
@@ -17,7 +17,7 @@ clean:
 
 test: venv
 	./$(VENV)/bin/python3 app.py & echo $$! > server.PID;
-	pytest
+	./$(VENV)/bin/python3 -m pytest
 	kill `cat server.PID`
 
 .PHONY: all venv run clean
