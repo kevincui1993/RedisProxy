@@ -13,8 +13,9 @@ run: venv
 clean:
 	rm -rf $(VENV)
 	find . -type f -name '*.pyc' -delete
-	kill `cat server.PID`
 	docker stop redis_test
+	sudo docker rm redis_test
+	kill `cat server.PID`
 test: venv
 	sudo yum install docker -y
 	sudo service docker start
@@ -23,5 +24,6 @@ test: venv
 	./$(VENV)/bin/python3 -m pytest
 	kill `cat server.PID`
 	sudo docker stop redis_test
+	sudo docker rm redis_test
 
 .PHONY: all venv run clean
