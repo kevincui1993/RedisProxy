@@ -22,6 +22,6 @@ test: venv
 	./$(VENV)/bin/python3 app.py & echo $$! > server.PID;
 	./$(VENV)/bin/python3 -m pytest
 	kill `cat server.PID`
-	docker stop redis_test
+	sudo docker stop redis_test
 
 .PHONY: all venv run clean
