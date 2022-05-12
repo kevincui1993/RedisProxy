@@ -13,7 +13,7 @@ run: venv
 clean:
 	rm -rf $(VENV)
 	find . -type f -name '*.pyc' -delete
-	docker stop redis_test
+	sudo docker stop redis_test
 	sudo docker rm redis_test
 	kill `cat server.PID`
 test: venv
