@@ -17,7 +17,8 @@ clean:
 	docker stop redis_test
 test: venv
 	sudo yum install docker -y
-	docker run --name redis_test -p 6379:6379 -d redis
+	sudo service docker start
+	sudo docker run --name redis_test -p 6379:6379 -d redis
 	./$(VENV)/bin/python3 app.py & echo $$! > server.PID;
 	./$(VENV)/bin/python3 -m pytest
 	kill `cat server.PID`
